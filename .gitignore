@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Temporary generated exports
+exports/*.xlsx
+!exports/.gitkeep
+
+# Environment & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

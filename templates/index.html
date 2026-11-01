@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi & Timesheet BPL - PT. Bahtera Pesat Lintasbuana</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#1d4ed8',
+                            600: '#1e40af',
+                            700: '#1e3a8a',
+                            800: '#172554'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 font-bold text-lg">
+                    BP
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-slate-900 leading-tight">Absensi & Timesheet BPL</h1>
+                    <p class="text-xs text-slate-500">PT. Bahtera Pesat Lintasbuana</p>
+                </div>
+            </div>
+
+            <!-- Live Clock Display -->
+            <div class="flex items-center space-x-4">
+                <div class="flex flex-col text-right">
+                    <span id="nav-live-clock" class="text-base sm:text-lg font-extrabold text-blue-700 font-mono tracking-wide">00:00:00</span>
+                    <span id="nav-live-date" class="text-xs text-slate-500 font-medium">Memuat tanggal...</span>
+                </div>
+                <!-- Profile Avatar -->
+                <div class="hidden sm:flex items-center space-x-2 pl-3 border-l border-slate-200">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs" id="user-avatar-initials">
+                        EA
+                    </div>
+                    <div class="text-left">
+                        <div class="text-xs font-bold text-slate-800 truncate max-w-[140px]" id="nav-user-name">Erick Ade</div>
+                        <div class="text-[10px] text-slate-500 truncate max-w-[140px]" id="nav-user-role">QA Tester level 1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex space-x-2 sm:space-x-6 overflow-x-auto py-2">
+                <button onclick="switchTab('today')" id="tab-btn-today" class="tab-btn flex items-center space-x-2 px-3 py-2 text-sm font-bold rounded-lg text-blue-700 bg-blue-50 border border-blue-200 transition">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                    <span>Absensi Hari Ini</span>
+                </button>
+                <button onclick="switchTab('timesheet')" id="tab-btn-timesheet" class="tab-btn flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Timesheet Bulanan</span>
+                </button>
+                <button onclick="switchTab('history')" id="tab-btn-history" class="tab-btn flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                    <span>Riwayat Absensi</span>
+                </button>
+                <button onclick="switchTab('profile')" id="tab-btn-profile" class="tab-btn flex items-center space-x-2 px-3 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+                    <i data-lucide="user-cog" class="w-4 h-4"></i>
+                    <span>Pengaturan Profil</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: ABSENSI HARI INI                    -->
+        <!-- ========================================== -->
+        <section id="tab-content-today" class="tab-content space-y-6">
+
+            <!-- Real-time Attendance Dashboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Left Column: Big Interactive Clock In & Out Cards -->
+                <div class="lg:col-span-8 space-y-6">
+
+                    <!-- Status Hero Banner -->
+                    <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                            <div>
+                                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-xs text-blue-200 mb-2 font-medium">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                                    <span>Jam Aktual Device: <strong id="hero-clock" class="font-mono text-white text-sm ml-1">00:00:00</strong></span>
+                                </div>
+                                <h2 class="text-2xl font-extrabold tracking-tight" id="hero-date">Senin, 02 November 2026</h2>
+                                <p class="text-xs text-blue-200 mt-1" id="hero-day-type">Hari Biasa (Normal Cutoff 17:00, di atas 17:00 otomatis Lembur)</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-center sm:text-right">
+                                <div class="text-[10px] uppercase font-bold text-blue-200">Status Kehadiran</div>
+                                <div id="hero-status-pill" class="text-sm font-extrabold text-amber-300 mt-0.5">Belum Absen Masuk</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LEAVE ACTIVE CARD (JIKA HARI INI IZIN / SAKIT / CUTI) -->
+                    <div id="card-leave-active" class="hidden bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-3.5">
+                                <div id="leave-active-badge" class="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center font-extrabold text-xl shadow-sm">
+                                    I
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">Status Hari Ini</div>
+                                    <h3 class="text-lg font-bold text-slate-800" id="leave-active-title">Izin (I)</h3>
+                                    <p class="text-xs text-slate-600 mt-0.5" id="leave-active-reason">Keterangan: -</p>
+                                </div>
+                            </div>
+                            <button onclick="handleResetToday()" class="px-4 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center space-x-1.5">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                <span>Batalkan & Kembali Absen Masuk</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- LEAVE QUICK ACTION BUTTONS (IZIN / SAKIT / CUTI) -->
+                    <div id="box-leave-buttons" class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-center space-x-2 text-xs font-bold text-slate-700">
+                            <i data-lucide="calendar-off" class="w-4 h-4 text-slate-500"></i>
+                            <span>Tidak Masuk Hari Ini? Ajukan:</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="handleLeavePrompt('Izin')" class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-extrabold text-xs rounded-xl border border-blue-200 transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+                                <span>📋 Izin (I)</span>
+                            </button>
+                            <button onclick="handleLeavePrompt('Sakit')" class="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-extrabold text-xs rounded-xl border border-amber-200 transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+                                <span>💊 Sakit (S)</span>
+                            </button>
+                            <button onclick="handleLeavePrompt('Cuti')" class="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-extrabold text-xs rounded-xl border border-purple-200 transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+                                <span>🏖️ Cuti (C)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 1: CLOCK IN (ABSEN PAGI) -->
+                    <div id="card-clockin" class="bg-white rounded-2xl border-2 border-emerald-500/40 shadow-sm p-6 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
+                                    1
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800">Absen Pagi (Clock In)</h3>
+                                    <p class="text-xs text-slate-500">Cukup klik tombol untuk absen masuk pagi hari.</p>
+                                </div>
+                            </div>
+                            <span id="badge-clockin-status" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                                Belum Clock In
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-4">
+                            <div class="w-full sm:w-48">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Datang (WIB):</label>
+                                <input type="time" id="input-clockin-time" class="w-full px-3 py-2.5 font-mono text-base font-bold border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                            <div class="w-full sm:flex-1 pt-1 sm:pt-5">
+                                <button id="btn-clockin" onclick="handleClockIn()" class="w-full py-3.5 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 transition transform active:scale-95 text-base">
+                                    <i data-lucide="log-in" class="w-5 h-5"></i>
+                                    <span>KLIK UNTUK CLOCK IN</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: CLOCK OUT (ABSEN SORE) & AGENDA TUGAS -->
+                    <div id="card-clockout" class="bg-white rounded-2xl border-2 border-rose-500/40 shadow-sm p-6 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-lg">
+                                    2
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800">Absen Sore (Clock Out) & Agenda Tugas</h3>
+                                    <p class="text-xs text-slate-500">Isi agenda/kegiatan kerja, lalu klik tombol Clock Out.</p>
+                                </div>
+                            </div>
+                            <span id="badge-clockout-status" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                Menunggu Absen Sore
+                            </span>
+                        </div>
+
+                        <!-- Clock Out Time Input -->
+                        <div class="w-full sm:w-48">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Pulang (WIB):</label>
+                            <input type="time" id="input-clockout-time" onchange="updateOvertimePreview()" class="w-full px-3 py-2.5 font-mono text-base font-bold border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-rose-500">
+                        </div>
+
+                        <!-- Agenda / UAT Textarea -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                Agenda / Keterangan Tugas Hari Ini <span class="text-red-500">* (Wajib diisi saat Clock Out)</span>
+                            </label>
+                            <textarea id="clockout-activity" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-sm outline-none transition" placeholder="Contoh: UAT Improvement Livin Food, Explore KPR x Cakra, Bug Fixing..."></textarea>
+                            
+                            <!-- Quick Tags -->
+                            <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                                <span class="text-[11px] text-slate-500 mr-1">Saran Cepat:</span>
+                                <button type="button" onclick="insertActivityTag('UAT Improvement Livin Food')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 transition">+ UAT Improvement</button>
+                                <button type="button" onclick="insertActivityTag('Explore KPR x Cakra')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 transition">+ Explore KPR</button>
+                                <button type="button" onclick="insertActivityTag('Create TC KPR x Cakra')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 transition">+ Create TC</button>
+                                <button type="button" onclick="insertActivityTag('Grooming Livin Food')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 transition">+ Grooming</button>
+                                <button type="button" onclick="insertActivityTag('BVT Improvement Livin Food')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 transition">+ BVT Verification</button>
+                            </div>
+                        </div>
+
+                        <!-- Auto-Overtime Breakdown Preview Box -->
+                        <div id="overtime-preview-box" class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 text-xs space-y-1.5">
+                            <div class="font-bold text-blue-900 flex items-center space-x-1.5">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-blue-600"></i>
+                                <span>Perhitungan Otomatis Timesheet BPL:</span>
+                            </div>
+                            <div id="ot-preview-details" class="text-slate-700 font-medium">
+                                Memuat kalkulasi jam...
+                            </div>
+                        </div>
+
+                        <!-- Clock Out Button -->
+                        <div class="pt-2">
+                            <button id="btn-clockout" onclick="handleClockOut()" class="w-full py-3.5 px-6 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-extrabold rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2 transition transform active:scale-95 text-base">
+                                <i data-lucide="log-out" class="w-5 h-5"></i>
+                                <span>KLIK UNTUK CLOCK OUT & SIMPAN AGENDA</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- RESET / EDIT CONTROLS (IF USER ALREADY CLOCKED OUT) -->
+                    <div id="card-completed-actions" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+                                <i data-lucide="check" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-bold text-emerald-950">Absensi Hari Ini Lengkap!</div>
+                                <div class="text-xs text-emerald-700" id="completed-summary-text">08:00 s/d 17:00</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="handleResetToday()" class="px-3.5 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                <span>Absen Ulang / Reset Hari Ini</span>
+                            </button>
+                            <button onclick="switchTab('timesheet')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                                <span>Lihat di Timesheet</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Info & Project Card -->
+                <div class="lg:col-span-4 space-y-6">
+                    <!-- Project Info Card -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Info Karyawan & Project</h4>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between border-b border-slate-100 pb-2">
+                                <span class="text-slate-500">Nama:</span>
+                                <span class="font-bold text-slate-800 text-right" id="side-name">Erick Ade</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-100 pb-2">
+                                <span class="text-slate-500">NIP:</span>
+                                <span class="font-mono font-bold text-slate-800" id="side-nip">240199238</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-100 pb-2">
+                                <span class="text-slate-500">Posisi:</span>
+                                <span class="font-semibold text-slate-800" id="side-pos">QA Tester level 1</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-100 pb-2">
+                                <span class="text-slate-500">Project:</span>
+                                <span class="font-bold text-blue-700 text-right" id="side-project">Livin App 2026</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-100 pb-2">
+                                <span class="text-slate-500">Kode Project:</span>
+                                <span class="font-mono font-semibold text-slate-800" id="side-pcode">DRB2601010</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">PM / Contact:</span>
+                                <span class="font-medium text-slate-800 text-right" id="side-pm">Annisa' H</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Rules Guide Card -->
+                    <div class="bg-slate-50 rounded-2xl border border-slate-200 p-5 text-xs text-slate-600 space-y-3">
+                        <div class="font-bold text-slate-800 flex items-center space-x-1.5">
+                            <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+                            <span>Aturan Otomatis Lembur BPL:</span>
+                        </div>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li><strong>Hari Kerja (Senin–Jumat)</strong>: Cutoff jam kerja reguler adalah <strong>17:00</strong>.</li>
+                            <li>Jika Clock Out <strong>> 17:00</strong> (misal 21:00), jam normal dipatok <strong>17:00</strong> dan lembur otomatis terisi <strong>17:00 - 21:00</strong>.</li>
+                            <li><strong>Weekend (Sabtu/Minggu)</strong>: Semua jam masuk langsung tercatat di kolom <strong>Lembur</strong>.</li>
+                            <li><strong>Izin / Sakit / Cuti</strong>: Jam kerja dikosongkan dan kolom Ket (I/S/C) otomatis diceklis (V) di Timesheet Excel.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Quick Link to Other Dates -->
+                    <div class="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 flex items-center justify-between">
+                        <div>
+                            <div class="font-bold">Lupa absen kemarin?</div>
+                            <div class="text-[11px] text-indigo-700">Input catatan absensi tanggal lalu.</div>
+                        </div>
+                        <button onclick="openManualModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs shadow-sm">
+                            + Input Manual
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: TIMESHEET BULANAN                   -->
+        <!-- ========================================== -->
+        <section id="tab-content-timesheet" class="tab-content hidden space-y-6">
+            <!-- Header Toolbar -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Periode:</label>
+                        <select id="select-timesheet-month" onchange="loadTimesheetData()" class="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                        <select id="select-timesheet-year" onchange="loadTimesheetData()" class="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
+                    <button onclick="loadTimesheetData()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm transition" title="Refresh & Tarik DB">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="openQuickFillModal()" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-200 transition flex items-center space-x-1.5">
+                        <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+                        <span>Auto-Fill Hari Kerja</span>
+                    </button>
+                </div>
+
+                <!-- 1-CLICK EXPORT BUTTON -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="triggerExportExcel()" class="w-full md:w-auto px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-md shadow-emerald-600/30 flex items-center justify-center space-x-2 transition transform active:scale-95 text-sm">
+                        <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+                        <span>DOWNLOAD EXCEL (.XLSX)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Header & Project Data Form (Accordion) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('project-header-body')">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="sliders" class="w-5 h-5 text-blue-600"></i>
+                        <h3 class="text-sm font-bold text-slate-800">Sesuaikan Project & Data Atas Timesheet</h3>
+                        <span class="text-xs text-slate-500 font-normal">(Klik untuk buka / tutup)</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full font-semibold" id="preview-project-badge">Livin App 2026</span>
+                        <i data-lucide="chevron-down" id="accordion-icon" class="w-5 h-5 text-slate-400 transition-transform"></i>
+                    </div>
+                </div>
+
+                <div id="project-header-body" class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">NAMA Karyawan</label>
+                            <input type="text" id="ts-header-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">NIP</label>
+                            <input type="text" id="ts-header-nip" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Departement</label>
+                            <input type="text" id="ts-header-department" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Periode</label>
+                            <input type="text" id="ts-header-periode" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Position / Jabatan</label>
+                            <input type="text" id="ts-header-position" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Project Name</label>
+                            <input type="text" id="ts-header-project-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Project Code</label>
+                            <input type="text" id="ts-header-project-code" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">PM / Contact</label>
+                            <input type="text" id="ts-header-pm" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                        <div class="text-xs text-slate-500">
+                            * Data di atas dapat diubah sewaktu-waktu dan langsung diterapkan saat export Excel.
+                        </div>
+                        <button onclick="saveHeaderAsDefaultProfile()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
+                            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                            <span>Simpan Sebagai Profil Default</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timesheet Preview Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800" id="preview-table-title">Pratinjau Tabel Timesheet</h3>
+                        <p class="text-xs text-slate-500">Sesuai format resmi PT. Bahtera Pesat Lintasbuana.</p>
+                    </div>
+                    <!-- Quick Stats -->
+                    <div class="flex items-center space-x-4 text-xs font-semibold">
+                        <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200" id="stat-hadir-count">Hadir: 0</span>
+                        <span class="text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200" id="stat-lembur-count">Lembur: 0</span>
+                        <span class="text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200" id="stat-izin-count">I/S/A/C: 0</span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 border-b border-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                                <th rowspan="2" class="p-2.5 border-r border-slate-300 text-center w-28">Tanggal</th>
+                                <th rowspan="2" class="p-2.5 border-r border-slate-300 text-center w-24">Hari</th>
+                                <th colspan="2" class="p-2 border-r border-slate-300 text-center bg-blue-50/50">Jam Kerja</th>
+                                <th colspan="2" class="p-2 border-r border-slate-300 text-center bg-amber-50/50">Lembur</th>
+                                <th rowspan="2" class="p-2.5 border-r border-slate-300 text-left min-w-[240px]">Keterangan Tugas / Agenda</th>
+                                <th colspan="4" class="p-2 border-r border-slate-300 text-center bg-slate-50">Ket</th>
+                                <th rowspan="2" class="p-2.5 text-center w-20">Aksi</th>
+                            </tr>
+                            <tr class="bg-slate-100 text-slate-600 border-b border-slate-300 font-bold text-[10px]">
+                                <th class="p-1.5 border-r border-slate-300 text-center w-16 bg-blue-50/50">Datang</th>
+                                <th class="p-1.5 border-r border-slate-300 text-center w-16 bg-blue-50/50">Pulang</th>
+                                <th class="p-1.5 border-r border-slate-300 text-center w-16 bg-amber-50/50">Mulai</th>
+                                <th class="p-1.5 border-r border-slate-300 text-center w-16 bg-amber-50/50">Selesai</th>
+                                <th class="p-1.5 border-r border-slate-300 text-center w-7">I</th>
+                                <th class="p-1.5 border-r border-slate-300 text-center w-7">S</th>
+                                <th class="p-1.5 border-r border-slate-300 text-center w-7">A</th>
+                                <th class="p-1.5 border-r border-slate-300 text-center w-7">C</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timesheet-table-body" class="divide-y divide-slate-200">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-300">
+                                <td colspan="4" class="p-3 text-center border-r border-slate-300">TOTAL</td>
+                                <td colspan="8" class="p-3 text-slate-600" id="table-total-summary">Memuat...</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: RIWAYAT & KELOLA ABSENSI            -->
+        <!-- ========================================== -->
+        <section id="tab-content-history" class="tab-content hidden space-y-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">Riwayat Catatan Absensi</h3>
+                    <p class="text-xs text-slate-500">Kelola, tambah, atau koreksi data absensi yang tersimpan di database.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openManualModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-1.5 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>+ Tambah Absensi Manual</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- History List Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3">Jam Masuk</th>
+                                <th class="p-3">Jam Pulang</th>
+                                <th class="p-3">Lembur</th>
+                                <th class="p-3">Agenda / Kegiatan</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-slate-100">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: PENGATURAN PROFIL                   -->
+        <!-- ========================================== -->
+        <section id="tab-content-profile" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Pengaturan Data Profil & Timesheet BPL</h3>
+                    <p class="text-xs text-slate-500">Data ini akan menjadi template default saat Anda membuka aplikasi dan membuat timesheet baru.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Column 1: Info Pribadi & Proyek -->
+                    <div class="space-y-4">
+                        <h4 class="text-sm font-bold text-blue-700 border-b border-blue-100 pb-2 flex items-center space-x-2">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                            <span>Data Karyawan & Penempatan</span>
+                        </h4>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap</label>
+                            <input type="text" id="prof-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">NIP</label>
+                            <input type="text" id="prof-nip" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Posisi / Jabatan</label>
+                            <input type="text" id="prof-position" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Departemen</label>
+                            <input type="text" id="prof-department" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Project</label>
+                            <input type="text" id="prof-project-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Project Code</label>
+                            <input type="text" id="prof-project-code" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">PM / Contact Person</label>
+                            <input type="text" id="prof-pm" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Signer & Tanda Tangan Timesheet -->
+                    <div class="space-y-4">
+                        <h4 class="text-sm font-bold text-blue-700 border-b border-blue-100 pb-2 flex items-center space-x-2">
+                            <i data-lucide="pen-tool" class="w-4 h-4"></i>
+                            <span>Atasan / Penandatangan (Signers)</span>
+                        </h4>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Atasan 1 (Team Leader) - Nama</label>
+                            <input type="text" id="prof-signer-leader-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Atasan 1 - Jabatan</label>
+                            <input type="text" id="prof-signer-leader-title" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Atasan 2 (Officer) - Nama</label>
+                            <input type="text" id="prof-signer-officer-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Atasan 2 - Jabatan</label>
+                            <input type="text" id="prof-signer-officer-title" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Pembuat (Karyawan) - Nama Singkat</label>
+                            <input type="text" id="prof-signer-emp-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Pembuat - NIP Baris Tanda Tangan</label>
+                            <input type="text" id="prof-signer-emp-nip" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <h4 class="text-sm font-bold text-blue-700 border-b border-blue-100 pb-2 pt-2 flex items-center space-x-2">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                            <span>Jam Kerja Standar</span>
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Datang Standar</label>
+                                <input type="time" id="prof-std-in" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Jam Pulang Standar</label>
+                                <input type="time" id="prof-std-out" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-slate-200 flex justify-end">
+                    <button onclick="saveProfile()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition flex items-center space-x-2">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>SIMPAN PERUBAHAN PROFIL</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            Sistem Absensi & Timesheet BPL • Dirancang khusus untuk kemudahan rekap & ekspor timesheet bulanan.
+        </div>
+    </footer>
+
+    <!-- MODAL: INPUT / EDIT ABSENSI MANUAL -->
+    <div id="modal-manual" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800" id="modal-manual-title">Input / Edit Absensi</h3>
+                <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="form-manual" onsubmit="handleSaveManual(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal</label>
+                    <input type="date" id="modal-date" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Status Kehadiran</label>
+                    <select id="modal-status" onchange="handleModalStatusChange(this.value)" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Hadir">Hadir</option>
+                        <option value="Izin">Izin (I)</option>
+                        <option value="Sakit">Sakit (S)</option>
+                        <option value="Alpa">Alpa (A)</option>
+                        <option value="Cuti">Cuti (C)</option>
+                        <option value="Libur">Libur</option>
+                    </select>
+                </div>
+
+                <div id="modal-time-fields" class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jam Datang</label>
+                        <input type="time" id="modal-clock-in" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jam Pulang</label>
+                        <input type="time" id="modal-clock-out" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div id="modal-overtime-fields" class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Lembur Mulai (Opsional)</label>
+                        <input type="time" id="modal-ot-in" class="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Lembur Selesai (Opsional)</label>
+                        <input type="time" id="modal-ot-out" class="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Agenda / Keterangan Tugas</label>
+                    <textarea id="modal-activity" rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Contoh: UAT Improvement Livin Food..."></textarea>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <button type="button" id="modal-btn-delete" onclick="handleDeleteAttendance()" class="hidden px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg transition">
+                        Hapus Catatan
+                    </button>
+                    <div class="flex items-center space-x-2 ml-auto">
+                        <button type="button" onclick="closeManualModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition">
+                            Simpan Catatan
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: AUTO-FILL BULANAN -->
+    <div id="modal-quick-fill" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">Auto-Fill Hari Kerja Bulan Ini</h3>
+                <button onclick="closeQuickFillModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-500">
+                Fitur ini membantu mengisi jam kerja standar otomatis pada seluruh hari kerja (Senin - Jumat) di bulan terpilih.
+            </p>
+
+            <form id="form-quick-fill" onsubmit="handleQuickFillSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jam Datang</label>
+                        <input type="time" id="qf-clock-in" value="08:00" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jam Pulang</label>
+                        <input type="time" id="qf-clock-out" value="17:00" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Default Agenda / Tugas</label>
+                    <input type="text" id="qf-activity" value="Daily QA Testing & Regression" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none">
+                </div>
+
+                <div class="space-y-2 pt-1">
+                    <label class="flex items-center space-x-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="qf-skip-weekends" checked class="w-4 h-4 text-blue-600 rounded">
+                        <span>Lewati hari Sabtu & Minggu (Khusus Hari Kerja)</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="qf-overwrite" class="w-4 h-4 text-blue-600 rounded">
+                        <span>Timpa data yang sudah ada sebelumnya</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeQuickFillModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">
+                        Mulai Auto-Fill
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
